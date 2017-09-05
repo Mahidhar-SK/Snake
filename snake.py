@@ -3,6 +3,7 @@ import pygame, sys, random, time
 
 playSurface = pygame.display.set_mode((720, 460))
 pygame.display.set_caption('Snake game!')
+restartFlag = True
 
 red = pygame.Color(255, 0, 0)
 green = pygame.Color(0, 255, 0)  
@@ -21,12 +22,14 @@ def gameOver(score):
     playSurface.blit(GOsurf, GOrect)
     showScore(score, 0)
     score = 0
-
+    myFont = pygame.font.SysFont('monaco', 42)
+    Resurf = myFont.render('Restart? (r = yes/esc = no)', True, red)
+    Rerect = Resurf.get_rect()
+    Rerect.midtop = (360, 150)
+    playSurface.blit(Resurf, Rerect)
     pygame.display.flip()
 
-    time.sleep(4)
-    pygame.quit()
-    sys.exit()
+    
 
 
 def showScore(score, choice):
@@ -40,15 +43,37 @@ def showScore(score, choice):
     playSurface.blit(Ssurf, Srect)
 
 
+def Pause():
+    e_flag = False
+    print('Game paused!')
+    myFont = pygame.font.SysFont('monaco', 72)
+    GOsurf = myFont.render('Game paused!', True, red)
+    GOrect = GOsurf.get_rect()
+    GOrect.midtop = (360, 150)
+    playSurface.blit(GOsurf, GOrect)
+    pygame.display.flip()
+
+    while not e_flag:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    e_flag = True
+                    break
+
+    print("Game resumed!")
 
 def main():
+    restartFlag = False
     init_errors = pygame.init()
     score = 0
     if init_errors[1] > 0:
         print("{0} Errors occurred, exiting...".format(init_errors[1]))
         sys.exit(-1)
     else:
-        print("(+) PyGame successfully initialized!")
+        print("Game started!")
 
     initFrameRate = 10
 
@@ -60,13 +85,15 @@ def main():
 
     direction = 'RIGHT'
     changeto = direction
-
-    while True:
+    e_flag = False
+    while not e_flag:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    Pause()
                 if event.key == pygame.K_RIGHT or event.key == ord('d'):
                     changeto = 'RIGHT'
                 if event.key == pygame.K_LEFT or event.key == ord('a'):
@@ -77,7 +104,11 @@ def main():
                     changeto = 'DOWN'
                 if event.key == pygame.K_ESCAPE:
                     pygame.event.post(pygame.event.Event(pygame.QUIT))
-
+                if event.key == ord('r'):
+                    e_flag = True
+                    restartFlag = True
+                    break
+        if e_flag:break
         if changeto == 'RIGHT' and not direction == 'LEFT':
             direction = 'RIGHT'
         if changeto == 'LEFT' and not direction == 'RIGHT':
@@ -120,15 +151,16 @@ def main():
             gameOver(score)
         if snakePosition[1] > 450 or snakePosition[1] < 0:
             gameOver(score)
+        else:
+            for block in snakeBody[1:]:
+                if snakePosition[0] == block[0] and snakePosition[1] == block[1]:
+                    gameOver(score)
 
-        for block in snakeBody[1:]:
-            if snakePosition[0] == block[0] and snakePosition[1] == block[1]:
-                gameOver(score)
+            showScore(score, 1)
+            pygame.display.flip()
 
-        showScore(score, 1)
-        pygame.display.flip()
+            fpsController.tick(initFrameRate)
+    
 
-        fpsController.tick(initFrameRate)
-
-
-main()
+while restartFlag:
+    main()
